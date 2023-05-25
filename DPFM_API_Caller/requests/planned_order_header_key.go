@@ -1,6 +1,6 @@
 package requests
 
-type PlannedOrderHederKey struct {
+type PlannedOrderHeaderKey struct {
 	MRPArea                                 []*string `json:"MRPArea"`
 	MRPAreaTo                               *string   `json:"MRPAreaTo"`
 	MRPAreaFrom                             *string   `json:"MRPAreaFrom"`

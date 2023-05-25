@@ -9,13 +9,13 @@
   "service_label": "PRODUCTION_ORDER",
   "message": {
     "Header": {
-      "ProductionOrder": 240000002,
+      "ProductionOrder": 240000003,
       "ProductionOrderType": "PP",
       "CreationDate": "2023-04-11",
       "LastChangeDate": "2023-04-11",
       "HeaderIsReleased": true,
-      "HeaderIsPartiallyConfirmed": true,
-      "HeaderIsConfirmed": false,
+      "HeaderIsPartiallyConfirmed": null,
+      "HeaderIsConfirmed": null,
       "HeaderIsLocked": false,
       "HeaderIsMarkedForDeletion": false,
       "Product": "A3750",
@@ -40,9 +40,9 @@
       "ProductionOrderActualEndDate": "",
       "ProductionOrderActualEndTime": "",
       "ProductionUnit": "PC",
-      "TotalQuantity": -10,
-      "PlannedScrapQuantity": -1.1764705,
-      "ConfirmedYieldQuantity": -10,
+      "TotalQuantity": 20,
+      "PlannedScrapQuantity": 2.352941,
+      "ConfirmedYieldQuantity": 20,
       "ProductionOrderHeaderText": ""
     }
   },

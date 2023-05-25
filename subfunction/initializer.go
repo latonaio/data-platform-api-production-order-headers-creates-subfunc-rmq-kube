@@ -5,25 +5,31 @@ import (
 	api_input_reader "data-platform-api-production-order-headers-creates-subfunc-rmq-kube/API_Input_Reader"
 	dpfm_api_output_formatter "data-platform-api-production-order-headers-creates-subfunc-rmq-kube/API_Output_Formatter"
 	api_processing_data_formatter "data-platform-api-production-order-headers-creates-subfunc-rmq-kube/API_Processing_Data_Formatter"
+	"data-platform-api-production-order-headers-creates-subfunc-rmq-kube/config"
 	"sync"
 
 	database "github.com/latonaio/golang-mysql-network-connector"
 	"golang.org/x/xerrors"
 
 	"github.com/latonaio/golang-logging-library-for-data-platform/logger"
+	rabbitmq "github.com/latonaio/rabbitmq-golang-client-for-data-platform"
 )
 
 type SubFunction struct {
-	ctx context.Context
-	db  *database.Mysql
-	l   *logger.Logger
+	ctx  context.Context
+	db   *database.Mysql
+	conf *config.Conf
+	rmq  *rabbitmq.RabbitmqClient
+	l    *logger.Logger
 }
 
-func NewSubFunction(ctx context.Context, db *database.Mysql, l *logger.Logger) *SubFunction {
+func NewSubFunction(ctx context.Context, db *database.Mysql, conf *config.Conf, rmq *rabbitmq.RabbitmqClient, l *logger.Logger) *SubFunction {
 	return &SubFunction{
-		ctx: ctx,
-		db:  db,
-		l:   l,
+		ctx:  ctx,
+		db:   db,
+		conf: conf,
+		rmq:  rmq,
+		l:    l,
 	}
 }
 
@@ -120,35 +126,77 @@ func (f *SubFunction) CreateSdc(
 	wg.Add(1)
 	go func(wg *sync.WaitGroup) {
 		defer wg.Done()
-
-		// 1-1. Production Order Headerに関する補助機能
-		// I-1-1.計画手配ヘッダデータの取得
-		psdc.PlannedOrderHeder, e = f.PlannedOrderHederInBulkProcess(sdc, psdc)
+		// 1-1-1.計画手配ヘッダデータの取得
+		psdc.PlannedOrderHeader, e = f.PlannedOrderHeaderInBulkProcess(sdc, psdc)
 		if e != nil {
 			err = e
 			return
 		}
 
-		// I-1-2.計画手配明細データの取得  //I-1-1
+		// 1-1-2.計画手配明細データの取得  //1-1-1
 		psdc.PlannedOrderItem, e = f.PlannedOrderItemInBulkProcess(sdc, psdc)
 		if e != nil {
 			err = e
 			return
 		}
 
-		// I-1-3.計画手配構成品目データの取得  //I-1-2
+		// 1-1-3.計画手配構成品目データの取得  //1-1-2
 		psdc.PlannedOrderComponent, e = f.PlannedOrderComponent(sdc, psdc)
 		if e != nil {
 			err = e
 			return
 		}
 
-		// 2-1-1. ロット管理品目の確認(品目マスタBPプラントデータの取得)  //I-1-2,I-1-3
-		psdc.ProductMasterBPPlant, e = f.ProductMasterBPPlant(sdc, psdc)
+		// 2-1-0. 在庫確認実行の判断
+		psdc.ExecuteProductAvailabilityCheck, e = f.ExecuteProductAvailabilityCheck(sdc, psdc)
 		if e != nil {
 			err = e
 			return
 		}
+
+		if psdc.ExecuteProductAvailabilityCheck.ExecuteProductAvailabilityCheck {
+			// 2-1-1. ロット管理品目の確認(品目マスタBPプラントデータの取得)  //1-1-2,1-1-3
+			psdc.ProductMasterBPPlant, e = f.ProductMasterBPPlant(sdc, psdc)
+			if e != nil {
+				err = e
+				return
+			}
+
+			// 2-3-1. ロットマスタデータの取得 //1-1-3
+			psdc.BatchMasterRecordBatch, e = f.BatchMasterRecordBatch(sdc, psdc)
+			if e != nil {
+				err = e
+				return
+			}
+
+			// 2-2-1. 構成品目ごとの在庫確認①(通常の在庫確認)   //1-1-2,1-1-3,2-1-1,2-3-1
+			psdc.StockConfirmation, e = f.StockConfirmation(sdc, psdc)
+			if e != nil {
+				err = e
+				return
+			}
+		}
+
+		// 2-4-0. ItemIsPartiallyConfirmedのセット  //2-2-1
+		psdc.ItemIsPartiallyConfirmed = f.ItemIsPartiallyConfirmed(sdc, psdc)
+
+		// 2-4-1. ItemIsConfirmedのセット  //2-2-1
+		psdc.ItemIsConfirmed = f.ItemIsConfirmed(sdc, psdc)
+
+		// 2-6. 製造指図明細への数量のセット  //2-2-1
+		psdc.TotalQuantity = f.TotalQuantity(sdc, psdc)
+
+		// 11-1-1. HeaderIsPartiallyConfirmedのセット
+		psdc.HeaderIsPartiallyConfirmed = f.HeaderIsPartiallyConfirmed(sdc, psdc)
+
+		// 11-1-2. HeaderIsConfirmedのセット
+		psdc.HeaderIsConfirmed = f.HeaderIsConfirmed(sdc, psdc)
+
+		// 11-2-1. TotalQuantityのセット  //2-6
+		psdc.TotalQuantityHeader = f.TotalQuantityHeader(sdc, psdc)
+
+		// 1-4. PlannedScrapQuantity	//1-1-3,11-2-1
+		psdc.PlannedScrapQuantityHeader = f.PlannedScrapQuantityHeader(sdc, psdc)
 	}(&wg)
 
 	wg.Add(1)

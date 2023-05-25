@@ -12,8 +12,9 @@ type RMQ struct {
 	port  string
 	vhost string
 
-	queueFrom string
-	queueTo   []string
+	queueFrom           string
+	queueTo             []string
+	sessionControlQueue string
 }
 
 func newRMQ() *RMQ {
@@ -27,6 +28,7 @@ func newRMQ() *RMQ {
 		queueTo: []string{
 			os.Getenv("RMQ_QUEUE_TO"),
 		},
+		sessionControlQueue: os.Getenv("RMQ_SESSION_CONTROL_QUEUE"),
 	}
 }
 
@@ -40,4 +42,8 @@ func (c *RMQ) QueueFrom() string {
 
 func (c *RMQ) QueueTo() []string {
 	return c.queueTo
+}
+
+func (c *RMQ) SessionControlQueue() string {
+	return c.sessionControlQueue
 }

@@ -1,19 +1,18 @@
 package requests
 
-type PlannedOrderHeder struct {
-	PlannedOrder                             int     `json:"PlannedOrder"`
-	PlannedOrderType                         *string `json:"PlannedOrderType"`
-	Product                                  *string `json:"Product"`
-	ProductDeliverFromParty                  *int    `json:"ProductDeliverFromParty"`
-	ProductDeliverToParty                    *int    `json:"ProductDeliverToParty"`
-	OriginIssuingPlant                       *string `json:"OriginIssuingPlant"`
-	OriginIssuingPlantStorageLocation        *string `json:"OriginIssuingPlantStorageLocation"`
-	DestinationReceivingPlant                *string `json:"DestinationReceivingPlant"`
-	DestinationReceivingPlantStorageLocation *string `json:"DestinationReceivingPlantStorageLocation"`
-	OwnerProductionPlantBusinessPartner      *int    `json:"OwnerProductionPlantBusinessPartner"`
-	OwnerProductionPlant                     *string `json:"OwnerProductionPlant"`
-	OwnerProductionPlantStorageLocation      *string `json:"OwnerProductionPlantStorageLocation"`
-	// BaseUnit                                 *string  `json:"BaseUnit"`
+type PlannedOrderHeader struct {
+	PlannedOrder                             int      `json:"PlannedOrder"`
+	PlannedOrderType                         *string  `json:"PlannedOrderType"`
+	Product                                  *string  `json:"Product"`
+	ProductDeliverFromParty                  *int     `json:"ProductDeliverFromParty"`
+	ProductDeliverToParty                    *int     `json:"ProductDeliverToParty"`
+	OriginIssuingPlant                       *string  `json:"OriginIssuingPlant"`
+	OriginIssuingPlantStorageLocation        *string  `json:"OriginIssuingPlantStorageLocation"`
+	DestinationReceivingPlant                *string  `json:"DestinationReceivingPlant"`
+	DestinationReceivingPlantStorageLocation *string  `json:"DestinationReceivingPlantStorageLocation"`
+	OwnerProductionPlantBusinessPartner      *int     `json:"OwnerProductionPlantBusinessPartner"`
+	OwnerProductionPlant                     *string  `json:"OwnerProductionPlant"`
+	OwnerProductionPlantStorageLocation      *string  `json:"OwnerProductionPlantStorageLocation"`
 	MRPArea                                  *string  `json:"MRPArea"`
 	MRPController                            *string  `json:"MRPController"`
 	PlannedOrderQuantityInBaseUnit           *float32 `json:"PlannedOrderQuantityInBaseUnit"`

@@ -3,11 +3,10 @@ package requests
 type PlannedOrderComponent struct {
 	PlannedOrder                     int      `json:"PlannedOrder"`
 	PlannedOrderItem                 int      `json:"PlannedOrderItem"`
+	BillOfMaterial                   *int     `json:"BillOfMaterial"`
 	BOMItem                          *int     `json:"BOMItem"`
-	BOMItemDescription               *string  `json:"BOMItemDescription"`
-	BillOfMaterialCategory           *string  `json:"BillOfMaterialCategory"`
-	BillOfMaterialItemNumber         *int     `json:"BillOfMaterialItemNumber"`
-	BillOfMaterialInternalID         *int     `json:"BillOfMaterialInternalID"`
+	Operations                       *int     `json:"Operations"`
+	OperationsItem                   *int     `json:"OperationsItem"`
 	Reservation                      *int     `json:"Reservation"`
 	ReservationItem                  *int     `json:"ReservationItem"`
 	ComponentProduct                 *string  `json:"ComponentProduct"`
@@ -16,7 +15,9 @@ type PlannedOrderComponent struct {
 	ComponentProductBuyer            *int     `json:"ComponentProductBuyer"`
 	ComponentProductSeller           *int     `json:"ComponentProductSeller"`
 	ComponentProductRequirementDate  *string  `json:"ComponentProductRequirementDate"`
+	ComponentProductRequirementTime  *string  `json:"ComponentProductRequirementTime"`
 	ComponentProductRequiredQuantity *float32 `json:"ComponentProductRequiredQuantity"`
+	ComponentProductBusinessPartner  *int     `json:"ComponentProductBusinessPartner"`
 	BaseUnit                         *string  `json:"BaseUnit"`
 	MRPArea                          *string  `json:"MRPArea"`
 	MRPController                    *string  `json:"MRPController"`
@@ -27,6 +28,7 @@ type PlannedOrderComponent struct {
 	StorageLocationForMRP            *string  `json:"StorageLocationForMRP"`
 	ComponentWithdrawnQuantity       *float32 `json:"ComponentWithdrawnQuantity"`
 	ComponentScrapInPercent          *float32 `json:"ComponentScrapInPercent"`
+	OperationScrapInPercent          *float32 `json:"OperationScrapInPercent"`
 	QuantityIsFixed                  *bool    `json:"QuantityIsFixed"`
 	LastChangeDateTime               *string  `json:"LastChangeDateTime"`
 	IsMarkedForDeletion              *bool    `json:"IsMarkedForDeletion"`

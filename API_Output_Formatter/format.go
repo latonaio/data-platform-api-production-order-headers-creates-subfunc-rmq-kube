@@ -23,23 +23,32 @@ func ConvertToHeader(
 		return nil, xerrors.Errorf("request create error: %w", err)
 	}
 
-	// I-1-1
-	header, err = jsonTypeConversion(header, psdc.PlannedOrderHeder[0])
-	if err != nil {
-		return nil, xerrors.Errorf("request create error: %w", err)
-	}
-
 	header.ProductionOrderType = getStringPtr("PP")
-	header.CreationDate = &psdc.CreationDateHeader.CreationDate
-	header.LastChangeDate = &psdc.LastChangeDateHeader.LastChangeDate
-	// header.HeaderIsPartiallyConfirmed =
-	// header.HeaderIsConfirmed =
+	header.CreationDate = psdc.CreationDateHeader.CreationDate
+	header.LastChangeDate = psdc.LastChangeDateHeader.LastChangeDate
+	header.HeaderIsReleased = sdc.InputParameters.ReleaseProductionOrder
+	header.HeaderIsPartiallyConfirmed = psdc.HeaderIsPartiallyConfirmed.HeaderIsPartiallyConfirmed
+	header.HeaderIsConfirmed = psdc.HeaderIsConfirmed.HeaderIsConfirmed
 	header.HeaderIsLocked = getBoolPtr(false)
 	header.HeaderIsMarkedForDeletion = getBoolPtr(false)
-	header.ProductionVersion = getStringPtr("0001")
-	// header.TotalQuantity =
-	// header.PlannedScrapQuantity =
-	// header.ConfirmedYieldQuantity =
+	header.Product = psdc.PlannedOrderHeader[0].Product
+	header.OwnerProductionPlant = getValue(psdc.PlannedOrderHeader[0].OwnerProductionPlant)
+	header.OwnerProductionPlantBusinessPartner = getValue(psdc.PlannedOrderHeader[0].OwnerProductionPlantBusinessPartner)
+	header.OwnerProductionPlantStorageLocation = psdc.PlannedOrderHeader[0].OwnerProductionPlantStorageLocation
+	header.MRPArea = psdc.PlannedOrderHeader[0].MRPArea
+	header.MRPController = psdc.PlannedOrderHeader[0].MRPController
+	// header.ProductionVersion = getStringPtr("0001")  //ProductionVersionがstring→intになった
+	header.PlannedOrder = &psdc.PlannedOrderHeader[0].PlannedOrder
+	header.OrderID = psdc.PlannedOrderHeader[0].OrderID
+	header.OrderItem = psdc.PlannedOrderHeader[0].OrderItem
+	header.ProductionOrderPlannedStartDate = psdc.PlannedOrderHeader[0].PlannedOrderPlannedStartDate
+	header.ProductionOrderPlannedStartTime = psdc.PlannedOrderHeader[0].PlannedOrderPlannedStartTime
+	header.ProductionOrderPlannedEndDate = psdc.PlannedOrderHeader[0].PlannedOrderPlannedEndDate
+	header.ProductionOrderPlannedEndTime = psdc.PlannedOrderHeader[0].PlannedOrderPlannedEndTime
+	header.ProductionUnit = psdc.PlannedOrderHeader[0].PlannedOrderOriginIssuingUnit
+	header.TotalQuantity = getValue(psdc.TotalQuantityHeader.TotalQuantity)
+	header.PlannedScrapQuantity = psdc.PlannedScrapQuantityHeader[0].PlannedScrapQuantity
+	header.ConfirmedYieldQuantity = psdc.TotalQuantityHeader.TotalQuantity
 
 	return header, nil
 }
@@ -50,6 +59,14 @@ func getBoolPtr(b bool) *bool {
 
 func getStringPtr(s string) *string {
 	return &s
+}
+
+func getValue[T any](ptr *T) T {
+	var zero T
+	if ptr == nil {
+		return zero
+	}
+	return *ptr
 }
 
 func jsonTypeConversion[T any](dist T, data interface{}) (T, error) {

@@ -9,22 +9,22 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func (f *SubFunction) PlannedOrderHederInBulkProcess(
+func (f *SubFunction) PlannedOrderHeaderInBulkProcess(
 	sdc *api_input_reader.SDC,
 	psdc *api_processing_data_formatter.SDC,
-) ([]*api_processing_data_formatter.PlannedOrderHeder, error) {
-	data := make([]*api_processing_data_formatter.PlannedOrderHeder, 0)
+) ([]*api_processing_data_formatter.PlannedOrderHeader, error) {
+	data := make([]*api_processing_data_formatter.PlannedOrderHeader, 0)
 	var err error
 
 	processType := psdc.ProcessType
 
 	if processType.PluralitySpec {
-		data, err = f.PlannedOrderHederByPluralitySpec(sdc, psdc)
+		data, err = f.PlannedOrderHeaderByPluralitySpec(sdc, psdc)
 		if err != nil {
 			return nil, err
 		}
 	} else if processType.RangeSpec {
-		data, err = f.PlannedOrderHederByRangeSpec(sdc, psdc)
+		data, err = f.PlannedOrderHeaderByRangeSpec(sdc, psdc)
 		if err != nil {
 			return nil, err
 		}
@@ -35,13 +35,13 @@ func (f *SubFunction) PlannedOrderHederInBulkProcess(
 	return data, nil
 }
 
-func (f *SubFunction) PlannedOrderHederByPluralitySpec(
+func (f *SubFunction) PlannedOrderHeaderByPluralitySpec(
 	sdc *api_input_reader.SDC,
 	psdc *api_processing_data_formatter.SDC,
-) ([]*api_processing_data_formatter.PlannedOrderHeder, error) {
+) ([]*api_processing_data_formatter.PlannedOrderHeader, error) {
 	args := make([]interface{}, 0)
 
-	dataKey := psdc.ConvertToPlannedOrderHederKey()
+	dataKey := psdc.ConvertToPlannedOrderHeaderKey()
 
 	mrpArea := sdc.InputParameters.MRPArea
 	ownerProductionPlantBusinessPartner := sdc.InputParameters.OwnerProductionPlantBusinessPartner
@@ -72,7 +72,6 @@ func (f *SubFunction) PlannedOrderHederByPluralitySpec(
 
 	args = append(args, dataKey.PlannedOrderType, dataKey.PlannedOrderIsReleased, dataKey.IsMarkedForDeletion)
 
-	// TODO: BaseUnit除いてる
 	rows, err := f.db.Query(
 		`SELECT PlannedOrder, PlannedOrderType, Product, ProductDeliverFromParty, ProductDeliverToParty, OriginIssuingPlant,
 		OriginIssuingPlantStorageLocation, DestinationReceivingPlant, DestinationReceivingPlantStorageLocation,
@@ -95,7 +94,7 @@ func (f *SubFunction) PlannedOrderHederByPluralitySpec(
 	}
 	defer rows.Close()
 
-	data, err := psdc.ConvertToPlannedOrderHeder(rows)
+	data, err := psdc.ConvertToPlannedOrderHeader(rows)
 	if err != nil {
 		return nil, err
 	}
@@ -103,13 +102,13 @@ func (f *SubFunction) PlannedOrderHederByPluralitySpec(
 	return data, err
 }
 
-func (f *SubFunction) PlannedOrderHederByRangeSpec(
+func (f *SubFunction) PlannedOrderHeaderByRangeSpec(
 	sdc *api_input_reader.SDC,
 	psdc *api_processing_data_formatter.SDC,
-) ([]*api_processing_data_formatter.PlannedOrderHeder, error) {
+) ([]*api_processing_data_formatter.PlannedOrderHeader, error) {
 	args := make([]interface{}, 0)
 
-	dataKey := psdc.ConvertToPlannedOrderHederKey()
+	dataKey := psdc.ConvertToPlannedOrderHeaderKey()
 
 	dataKey.MRPAreaTo = sdc.InputParameters.MRPAreaTo
 	dataKey.MRPAreaFrom = sdc.InputParameters.MRPAreaFrom
@@ -148,7 +147,7 @@ func (f *SubFunction) PlannedOrderHederByRangeSpec(
 	}
 	defer rows.Close()
 
-	data, err := psdc.ConvertToPlannedOrderHeder(rows)
+	data, err := psdc.ConvertToPlannedOrderHeader(rows)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +245,7 @@ func (f *SubFunction) PlannedOrderItemByPluralitySpec(
 
 	dataKey := psdc.ConvertToPlannedOrderItemKey()
 
-	for _, v := range psdc.PlannedOrderHeder {
+	for _, v := range psdc.PlannedOrderHeader {
 		dataKey.PlannedOrder = append(dataKey.PlannedOrder, v.PlannedOrder)
 	}
 	dataKey.MRPArea = append(dataKey.MRPArea, *sdc.InputParameters.MRPArea...)
@@ -334,13 +333,13 @@ func (f *SubFunction) PlannedOrderComponent(
 	args = append(args, dataKey.IsMarkedForDeletion)
 
 	rows, err := f.db.Query(
-		`SELECT PlannedOrder, PlannedOrderItem, BOMItem, BOMItemDescription, BillOfMaterialCategory,
-		BillOfMaterialItemNumber, BillOfMaterialInternalID, Reservation, ReservationItem, ComponentProduct,
-		ComponentProductDeliverFromParty, ComponentProductDeliverToParty, ComponentProductBuyer,
-		ComponentProductSeller, ComponentProductRequirementDate, ComponentProductRequiredQuantity, BaseUnit,
-		MRPArea, MRPController, StockConfirmationPartnerFunction, StockConfirmationBusinessPartner,
-		StockConfirmationPlant, StockConfirmationPlantBatch, StorageLocationForMRP, ComponentWithdrawnQuantity,
-		ComponentScrapInPercent, QuantityIsFixed, LastChangeDateTime, IsMarkedForDeletion
+		`SELECT PlannedOrder, PlannedOrderItem, BillOfMaterial, BOMItem, Operations, OperationsItem, Reservation,
+		ReservationItem, ComponentProduct, ComponentProductDeliverFromParty, ComponentProductDeliverToParty,
+		ComponentProductBuyer, ComponentProductSeller, ComponentProductRequirementDate, ComponentProductRequirementTime,
+		ComponentProductRequiredQuantity, ComponentProductBusinessPartner, BaseUnit, MRPArea, MRPController,
+		StockConfirmationPartnerFunction, StockConfirmationBusinessPartner, StockConfirmationPlant, StockConfirmationPlantBatch,
+		StorageLocationForMRP, ComponentWithdrawnQuantity, ComponentScrapInPercent, OperationScrapInPercent, QuantityIsFixed,
+		LastChangeDateTime, IsMarkedForDeletion
 		FROM DataPlatformMastersAndTransactionsMysqlKube.data_platform_planned_order_component_data
 		WHERE (PlannedOrder, PlannedOrderItem) IN ( `+repeat+` )
 		AND IsMarkedForDeletion = ?;`, args...,
@@ -358,11 +357,97 @@ func (f *SubFunction) PlannedOrderComponent(
 	return data, err
 }
 
+func (f *SubFunction) PlannedScrapQuantityHeader(
+	sdc *api_input_reader.SDC,
+	psdc *api_processing_data_formatter.SDC,
+) []*api_processing_data_formatter.PlannedScrapQuantityHeader {
+	data := make([]*api_processing_data_formatter.PlannedScrapQuantityHeader, 0)
+
+	for _, v := range psdc.PlannedOrderComponent {
+		if v.ComponentScrapInPercent == nil || psdc.TotalQuantityHeader.TotalQuantity == nil {
+			continue
+		}
+		componentScrapInPercent := *v.ComponentScrapInPercent
+		totalQuantity := *psdc.TotalQuantityHeader.TotalQuantity
+
+		plannedScrapQuantity := getFloat32Ptr(totalQuantity * componentScrapInPercent / 100)
+		datum := psdc.ConvertToPlannedScrapQuantityHeader(v.PlannedOrder, v.PlannedOrderItem, componentScrapInPercent, totalQuantity, plannedScrapQuantity)
+
+		data = append(data, datum)
+	}
+
+	return data
+}
+
+// Headerの集計項目等の計算とセット
+func (f *SubFunction) HeaderIsPartiallyConfirmed(
+	sdc *api_input_reader.SDC,
+	psdc *api_processing_data_formatter.SDC,
+) *api_processing_data_formatter.HeaderIsPartiallyConfirmed {
+	headerIsPartiallyConfirmed := getBoolPtr(true)
+
+	if len(psdc.ItemIsPartiallyConfirmed) == 0 {
+		headerIsPartiallyConfirmed = nil
+	} else {
+		for _, itemIsPartiallyConfirmed := range psdc.ItemIsPartiallyConfirmed {
+			if !itemIsPartiallyConfirmed.ItemIsPartiallyConfirmed {
+				headerIsPartiallyConfirmed = getBoolPtr(false)
+				break
+			}
+		}
+	}
+
+	data := psdc.ConvertToHeaderIsPartiallyConfirmed(headerIsPartiallyConfirmed)
+
+	return data
+}
+
+func (f *SubFunction) HeaderIsConfirmed(
+	sdc *api_input_reader.SDC,
+	psdc *api_processing_data_formatter.SDC,
+) *api_processing_data_formatter.HeaderIsConfirmed {
+	headerIsConfirmed := getBoolPtr(true)
+
+	if len(psdc.ItemIsConfirmed) == 0 {
+		headerIsConfirmed = nil
+	} else {
+		for _, itemIsConfirmed := range psdc.ItemIsConfirmed {
+			if !itemIsConfirmed.ItemIsConfirmed {
+				headerIsConfirmed = getBoolPtr(false)
+				break
+			}
+		}
+	}
+
+	data := psdc.ConvertToHeaderIsConfirmed(headerIsConfirmed)
+
+	return data
+}
+
+func (f *SubFunction) TotalQuantityHeader(
+	sdc *api_input_reader.SDC,
+	psdc *api_processing_data_formatter.SDC,
+) *api_processing_data_formatter.TotalQuantityHeader {
+	totalQuantity := float32(0)
+
+	for _, v := range psdc.TotalQuantity {
+		if v.TotalQuantity == nil {
+			continue
+		}
+		totalQuantity = totalQuantity + *v.TotalQuantity
+	}
+
+	data := psdc.ConvertToTotalQuantityHeader(&totalQuantity)
+
+	return data
+}
+
+// 日付等の処理
 func (f *SubFunction) CreationDateHeader(
 	sdc *api_input_reader.SDC,
 	psdc *api_processing_data_formatter.SDC,
 ) *api_processing_data_formatter.CreationDate {
-	data := psdc.ConvertToCreationDateHeader(getSystemDate())
+	data := psdc.ConvertToCreationDate(getSystemDate())
 
 	return data
 }
@@ -371,7 +456,7 @@ func (f *SubFunction) LastChangeDateHeader(
 	sdc *api_input_reader.SDC,
 	psdc *api_processing_data_formatter.SDC,
 ) *api_processing_data_formatter.LastChangeDate {
-	data := psdc.ConvertToLastChangeDateHeader(getSystemDate())
+	data := psdc.ConvertToLastChangeDate(getSystemDate())
 
 	return data
 }
@@ -379,4 +464,12 @@ func (f *SubFunction) LastChangeDateHeader(
 func getSystemDate() string {
 	day := time.Now()
 	return day.Format("2006-01-02")
+}
+
+func getBoolPtr(b bool) *bool {
+	return &b
+}
+
+func getFloat32Ptr(f float32) *float32 {
+	return &f
 }
